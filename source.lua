@@ -1,10 +1,10 @@
 --[[
-    Lumina UI Library v5.0 (Fluent, Rayfield & WindUI Fusion)
-    - 1:1 Instant Manual Dragging (Header & Bottom iOS Bar)
-    - Localized Dark Glass Acrylic (0.34 Transparency)
-    - Soft Drop Shadows & Translucent Strokes
+    Lumina UI Library v6.0 (Opus-Grade Glass & Spring Motion)
+    - Elastic Spring-Physics Animations on all Components
+    - 1:1 Instant Dual-Bar Dragging (Header & Bottom iOS Grabber)
+    - 0.34 Deep Black Translucent Glass Acrylic
     - Customizable Keybind Toggle (Default: LeftControl)
-    - Toast Notifications with Animated Countdown Progress Bars
+    - Toast Notifications with Dynamic Countdown Progress Bar
 --]]
 
 local TweenService = game:GetService("TweenService")
@@ -16,8 +16,9 @@ local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local Lumina = {}
 Lumina.__index = Lumina
 
+-- Smooth Animation Helper Engine
 local function Tween(instance, properties, duration, style, direction)
-    duration = duration or 0.2
+    duration = duration or 0.22
     style = style or Enum.EasingStyle.Quart
     direction = direction or Enum.EasingDirection.Out
     local tween = TweenService:Create(instance, TweenInfo.new(duration, style, direction), properties)
@@ -25,7 +26,7 @@ local function Tween(instance, properties, duration, style, direction)
     return tween
 end
 
--- 1:1 Instant Dragging Mechanism for Header and Bottom iOS Bar
+-- 1:1 Instant Dragging Engine (Attached to Header & Bottom iOS Bar)
 local function MakeDraggable(dragHandle, targetFrame)
     local dragging = false
     local dragInput, dragStart, startPos
@@ -68,7 +69,7 @@ function Lumina:CreateWindow(config)
     local titleText = config.Title or "LUMINA UI"
     local subTitleText = config.SubTitle or ""
     
-    -- Keybind handling (Default to LeftControl)
+    -- Keybind Handling (Default to LeftControl)
     local toggleKey = config.Keybind or Enum.KeyCode.LeftControl
     if typeof(toggleKey) == "string" then
         toggleKey = Enum.KeyCode[toggleKey] or Enum.KeyCode.LeftControl
@@ -91,7 +92,7 @@ function Lumina:CreateWindow(config)
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = parentGui
 
-    -- Notification Holder Container (Top-Right)
+    -- Notification Container (Top-Right)
     local NotifHolder = Instance.new("Frame")
     NotifHolder.Name = "NotificationHolder"
     NotifHolder.Size = UDim2.new(0, 310, 1, -40)
@@ -105,7 +106,7 @@ function Lumina:CreateWindow(config)
     NotifLayout.Padding = UDim.new(0, 8)
     NotifLayout.Parent = NotifHolder
 
-    -- Rayfield & WindUI Style Soft Drop Shadow Container
+    -- Rayfield/WindUI Style Soft Drop Shadow Container
     local ShadowHolder = Instance.new("ImageLabel")
     ShadowHolder.Name = "ShadowHolder"
     ShadowHolder.Size = UDim2.new(0, 580, 0, 380)
@@ -118,14 +119,23 @@ function Lumina:CreateWindow(config)
     ShadowHolder.SliceCenter = Rect.new(49, 49, 450, 450)
     ShadowHolder.Parent = ScreenGui
 
-    -- Keybind Toggle Visibility Listener
+    -- Keybind Toggle Listener
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == toggleKey then
-            ShadowHolder.Visible = not ShadowHolder.Visible
+            if ShadowHolder.Visible then
+                Tween(ShadowHolder, {Size = UDim2.new(0, 560, 0, 360), ImageTransparency = 1}, 0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+                task.wait(0.2)
+                ShadowHolder.Visible = false
+            else
+                ShadowHolder.Visible = true
+                ShadowHolder.Size = UDim2.new(0, 560, 0, 360)
+                ShadowHolder.ImageTransparency = 1
+                Tween(ShadowHolder, {Size = UDim2.new(0, 580, 0, 380), ImageTransparency = 0.35}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            end
         end
     end)
 
-    -- Main Glass Container Frame (Background Transparency: 0.34)
+    -- Main Frame (Opus Glass Transparency: 0.34)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -145,7 +155,7 @@ function Lumina:CreateWindow(config)
     MainStroke.Thickness = 1.2
     MainStroke.Parent = MainFrame
 
-    -- Header Bar (Draggable Handle 1)
+    -- Header Bar
     local Header = Instance.new("Frame")
     Header.Name = "Header"
     Header.Size = UDim2.new(1, 0, 0, 44)
@@ -184,7 +194,7 @@ function Lumina:CreateWindow(config)
 
     MakeDraggable(Header, ShadowHolder)
 
-    -- Bottom iOS Grabber Pill Bar (Draggable Handle 2)
+    -- Bottom iOS Grabber Pill Bar
     local BottomBarHolder = Instance.new("Frame")
     BottomBarHolder.Name = "BottomBarHolder"
     BottomBarHolder.Size = UDim2.new(1, 0, 0, 24)
@@ -213,7 +223,7 @@ function Lumina:CreateWindow(config)
 
     MakeDraggable(BottomBarHolder, ShadowHolder)
 
-    -- Sidebar & Content Layout
+    -- Sidebar & Containers
     local Sidebar = Instance.new("ScrollingFrame")
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 145, 1, -68)
@@ -244,7 +254,7 @@ function Lumina:CreateWindow(config)
 
     local WindowObj = { Tabs = {}, CurrentTab = nil }
 
-    -- Toast Notification System with Animated Countdown Bar
+    -- Toast Notification System
     function WindowObj:Notify(config)
         config = config or {}
         local title = config.Title or "Notification"
@@ -283,7 +293,7 @@ function Lumina:CreateWindow(config)
         nDesc.Font = Enum.Font.Gotham
         nDesc.TextXAlignment = Enum.TextXAlignment.Left
 
-        -- Countdown Progress Bar
+        -- Dynamic Progress Bar
         local BarTrack = Instance.new("Frame", NotifCard)
         BarTrack.Size = UDim2.new(1, -24, 0, 3)
         BarTrack.Position = UDim2.new(0, 12, 1, -8)
@@ -358,7 +368,7 @@ function Lumina:CreateWindow(config)
                 Tween(t.Button, {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(140, 140, 155)}, 0.2)
                 t.Container.Visible = false
             end
-            Tween(TabButton, {BackgroundTransparency = 0, TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
+            Tween(TabButton, {BackgroundTransparency = 0, TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
             Container.Visible = true
             WindowObj.CurrentTab = TabObj
         end
@@ -367,7 +377,7 @@ function Lumina:CreateWindow(config)
         if #WindowObj.Tabs == 0 then ActivateTab() end
         table.insert(WindowObj.Tabs, TabObj)
 
-        -- Component: Button
+        -- Component: Button (With Elastic Hover)
         function TabObj:CreateButton(name, callback)
             callback = callback or function() end
             local btn = Instance.new("TextButton")
@@ -391,10 +401,24 @@ function Lumina:CreateWindow(config)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.GothamSemibold
 
-            btn.MouseButton1Click:Connect(callback)
+            btn.MouseEnter:Connect(function()
+                Tween(btn, {BackgroundColor3 = Color3.fromRGB(24, 24, 32), BackgroundTransparency = 0.15}, 0.2)
+                Tween(stroke, {Transparency = 0.75}, 0.2)
+            end)
+            btn.MouseLeave:Connect(function()
+                Tween(btn, {BackgroundColor3 = Color3.fromRGB(16, 16, 20), BackgroundTransparency = 0.3}, 0.2)
+                Tween(stroke, {Transparency = 0.88}, 0.2)
+            end)
+
+            btn.MouseButton1Click:Connect(function()
+                Tween(btn, {Size = UDim2.new(0.98, 0, 0, 34)}, 0.08, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+                task.wait(0.08)
+                Tween(btn, {Size = UDim2.new(1, 0, 0, 36)}, 0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                callback()
+            end)
         end
 
-        -- Component: Toggle
+        -- Component: Toggle (Spring Motion)
         function TabObj:CreateToggle(name, default, callback)
             local toggled = default or false
             callback = callback or function() end
@@ -438,14 +462,14 @@ function Lumina:CreateWindow(config)
 
             btn.MouseButton1Click:Connect(function()
                 toggled = not toggled
-                Tween(track, {BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(38, 38, 48)})
-                Tween(knob, {Position = toggled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)})
-                Tween(knob, {BackgroundColor3 = toggled and Color3.fromRGB(11, 11, 14) or Color3.fromRGB(160, 160, 175)})
+                Tween(track, {BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(38, 38, 48)}, 0.2)
+                Tween(knob, {Position = toggled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)}, 0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                Tween(knob, {BackgroundColor3 = toggled and Color3.fromRGB(11, 11, 14) or Color3.fromRGB(160, 160, 175)}, 0.2)
                 callback(toggled)
             end)
         end
 
-        -- Component: Slider
+        -- Component: Slider (Smooth Fill Tracking)
         function TabObj:CreateSlider(name, min, max, default, callback)
             min = min or 0; max = max or 100
             default = math.clamp(default or min, min, max)
@@ -497,7 +521,7 @@ function Lumina:CreateWindow(config)
                 local pos = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
                 local val = math.floor(min + (max - min) * pos)
                 vlbl.Text = tostring(val)
-                fill.Size = UDim2.new(pos, 0, 1, 0)
+                Tween(fill, {Size = UDim2.new(pos, 0, 1, 0)}, 0.08, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
                 callback(val)
             end
 
@@ -518,7 +542,7 @@ function Lumina:CreateWindow(config)
             end)
         end
 
-        -- Component: Dropdown
+        -- Component: Dropdown (Animated Spring Expansion)
         function TabObj:CreateDropdown(name, options, callback)
             options = options or {}
             callback = callback or function() end
@@ -569,18 +593,18 @@ function Lumina:CreateWindow(config)
                 optBtn.MouseButton1Click:Connect(function()
                     lbl.Text = name .. ": " .. opt
                     expanded = false
-                    Tween(frame, {Size = UDim2.new(1, 0, 0, 36)})
+                    Tween(frame, {Size = UDim2.new(1, 0, 0, 36)}, 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
                     callback(opt)
                 end)
             end
 
             btn.MouseButton1Click:Connect(function()
                 expanded = not expanded
-                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and (36 + (#options * 28)) or 36)})
+                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and (36 + (#options * 28)) or 36)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
             end)
         end
 
-        -- Component: Color Picker
+        -- Component: Color Picker (Hue Gradient Picker)
         function TabObj:CreateColorPicker(name, default, callback)
             default = default or Color3.fromRGB(255, 255, 255)
             callback = callback or function() end
@@ -664,7 +688,7 @@ function Lumina:CreateWindow(config)
 
             btn.MouseButton1Click:Connect(function()
                 expanded = not expanded
-                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and 72 or 36)})
+                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and 72 or 36)}, 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
             end)
         end
 
