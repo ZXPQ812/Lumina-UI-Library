@@ -1,10 +1,9 @@
 --[[
-    Lumina UI Library v3.0 (Fluent & WindUI Inspired)
-    - Bottom iOS Grabber Pill Dragging with Smooth Interpolation
+    Lumina UI Library v3.1 (Fixed & Production Ready)
+    - Bottom iOS Grabber Pill Dragging with 0.2s Smooth Delay
     - Dynamic Lighting Blur Effect
     - Layered Soft Drop Shadows
     - Animated Toast Notifications with Countdown Bars
-    - High-End Micro-Interactions & Dark Aesthetics
 --]]
 
 local TweenService = game:GetService("TweenService")
@@ -13,7 +12,7 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
 local Lumina = {}
 Lumina.__index = Lumina
@@ -27,9 +26,7 @@ local function Tween(instance, properties, duration, style, direction)
     return tween
 end
 
--- ============================================================================
--- AUTHENTIC BOTTOM iOS BAR DRAGGING WITH SMOOTH DELAY INTERPOLATION
--- ============================================================================
+-- Smooth Bottom iOS Bar Dragging Mechanism (0.2s lag/interpolation feel)
 local function MakeSmoothBottomDraggable(dragHandle, targetFrame)
     local dragging = false
     local dragInput, dragStart, startPos
@@ -60,7 +57,6 @@ local function MakeSmoothBottomDraggable(dragHandle, targetFrame)
             local delta = input.Position - dragStart
             local screenGui = targetFrame.Parent
             if screenGui then
-                local viewportSize = screenGui.AbsoluteSize
                 local newX = startPos.X + delta.X
                 local newY = startPos.Y + delta.Y
                 targetPos = UDim2.new(0, newX + (targetFrame.AbsoluteSize.X / 2), 0, newY + (targetFrame.AbsoluteSize.Y / 2))
@@ -68,11 +64,10 @@ local function MakeSmoothBottomDraggable(dragHandle, targetFrame)
         end
     end)
 
-    -- Smooth Spring/Tween interpolation loop (0.2s lag/delay effect like mobile/fluent overlays)
     RunService.RenderStepped:Connect(function(dt)
         if dragging or (targetFrame.Position - targetPos).Magnitude > 0.1 then
             local currentPos = targetFrame.Position
-            local alpha = math.clamp(dt * 12, 0, 1) -- 0.2s smooth lag feel
+            local alpha = math.clamp(dt * 12, 0, 1)
             targetFrame.Position = UDim2.new(
                 currentPos.X.Scale, currentPos.X.Offset + (targetPos.X.Offset - currentPos.X.Offset) * alpha,
                 currentPos.Y.Scale, currentPos.Y.Offset + (targetPos.Y.Offset - currentPos.Y.Offset) * alpha
@@ -85,7 +80,14 @@ function Lumina:CreateWindow(config)
     config = config or {}
     local titleText = config.Title or "LUMINA UI"
 
-    local parentGui = (syn and CoreGui) or LocalPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
+    -- Robust parent container resolution for both Studio and Executors
+    local success, parentGui = pcall(function()
+        return (syn and CoreGui) or (gethui and gethui()) or LocalPlayer:WaitForChild("PlayerGui")
+    end)
+    if not success or not parentGui then
+        parentGui = LocalPlayer:WaitForChild("PlayerGui")
+    end
+
     if parentGui:FindFirstChild("LuminaUI") then
         parentGui.LuminaUI:Destroy()
     end
@@ -127,7 +129,7 @@ function Lumina:CreateWindow(config)
     local ShadowHolder = Instance.new("ImageLabel")
     ShadowHolder.Name = "ShadowHolder"
     ShadowHolder.Size = UDim2.new(0, 580, 0, 380)
-    ShadowHolder.Position = UDim2.new(0.5, -290, 0.5, -190)
+    ShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
     ShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
     ShadowHolder.BackgroundTransparency = 1
     ShadowHolder.Image = "rbxassetid://6014261993"
@@ -182,9 +184,7 @@ function Lumina:CreateWindow(config)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = Header
 
-    -- ============================================================================
-    -- AUTHENTIC BOTTOM iOS GRABBER BAR (DRAGGABLE HANDLE AT THE BOTTOM)
-    -- ============================================================================
+    -- Bottom iOS Grabber Bar (Draggable Handle)
     local BottomBarHolder = Instance.new("Frame")
     BottomBarHolder.Name = "BottomBarHolder"
     BottomBarHolder.Size = UDim2.new(1, 0, 0, 22)
@@ -211,7 +211,6 @@ function Lumina:CreateWindow(config)
     GrabberCorner.CornerRadius = UDim.new(1, 0)
     GrabberCorner.Parent = iOSGrabber
 
-    -- Enable Smooth Dragging via Bottom Bar
     MakeSmoothBottomDraggable(BottomBarHolder, ShadowHolder)
 
     -- Sidebar & Content Layout
@@ -249,7 +248,7 @@ function Lumina:CreateWindow(config)
     function WindowObj:Notify(config)
         config = config or {}
         local title = config.Title or "Notification"
-        local content = config.Content = config.Content or "Action executed successfully."
+        local content = config.Content or "Action executed successfully."
         local duration = config.Duration or 4
 
         local NotifCard = Instance.new("Frame")
@@ -296,10 +295,8 @@ function Lumina:CreateWindow(config)
         BarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
 
-        -- Smooth Entrance Animation
         Tween(NotifCard, {Position = UDim2.new(0, 0, 0, 0)}, 0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-        -- Countdown Tween
         local tweenBar = TweenService:Create(BarFill, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 1, 0)})
         tweenBar:Play()
 
@@ -370,7 +367,6 @@ function Lumina:CreateWindow(config)
         if #WindowObj.Tabs == 0 then ActivateTab() end
         table.insert(WindowObj.Tabs, TabObj)
 
-        -- Component: Button
         function TabObj:CreateButton(name, callback)
             callback = callback or function() end
             local btn = Instance.new("TextButton")
@@ -397,7 +393,6 @@ function Lumina:CreateWindow(config)
             btn.MouseButton1Click:Connect(callback)
         end
 
-        -- Component: Toggle
         function TabObj:CreateToggle(name, default, callback)
             local toggled = default or false
             callback = callback or function() end
@@ -448,7 +443,6 @@ function Lumina:CreateWindow(config)
             end)
         end
 
-        -- Component: Slider
         function TabObj:CreateSlider(name, min, max, default, callback)
             min = min or 0; max = max or 100
             default = math.clamp(default or min, min, max)
@@ -521,7 +515,6 @@ function Lumina:CreateWindow(config)
             end)
         end
 
-        -- Component: Dropdown
         function TabObj:CreateDropdown(name, options, callback)
             options = options or {}
             callback = callback or function() end
@@ -586,26 +579,25 @@ function Lumina:CreateWindow(config)
         return TabObj
     end
 
-    -- Built-in Demo Method
     function WindowObj:Demo()
-        local t1 = self:CreateTab("Features & Demo")
+        local t1 = self:CreateTab("Demo & Features")
         
-        t1:CreateButton("Trigger Alert", function()
+        t1:CreateButton("Test Notification", function()
             self:Notify({
-                Title = "Fluent & WindUI Style",
-                Content = "Smooth countdown timer bar notification!",
+                Title = "Fluent & WindUI Alert",
+                Content = "Countdown progress bar running smoothly!",
                 Duration = 4
             })
         end)
 
         t1:CreateToggle("God Mode", true, function(state) 
-            self:Notify({ Title = "State Updated", Content = "GodMode is " .. tostring(state), Duration = 3 })
+            self:Notify({ Title = "Toggle Changed", Content = "GodMode state: " .. tostring(state), Duration = 3 })
         end)
 
         t1:CreateSlider("WalkSpeed", 16, 120, 16, function(val) end)
 
-        t1:CreateDropdown("Preset Mode", {"Performance", "Quality", "Ultra"}, function(opt) 
-            self:Notify({ Title = "Preset Loaded", Content = opt .. " configuration applied.", Duration = 3 })
+        t1:CreateDropdown("Theme Preset", {"Dark", "AMOLED", "Midnight"}, function(opt) 
+            self:Notify({ Title = "Preset Loaded", Content = opt .. " mode active.", Duration = 3 })
         end)
     end
 
