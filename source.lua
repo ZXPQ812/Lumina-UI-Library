@@ -1,8 +1,9 @@
 --[[
-    Lumina UI Library v1.3 (WindUI, Rayfield & Luna Inspired)
-    - Background Transparency: 0.34
-    - Soft Rayfield Drop Shadows & iOS Pill Bar
-    - Animated Notification System with Countdown Progress Bar
+    Lumina UI Library v2.0
+    - iOS Pill Bar Draggable Header
+    - 0.34 Background Transparency
+    - Rayfield / WindUI Drop Shadows
+    - Animated Toast Notifications with Countdown Progress Bars
 --]]
 
 local TweenService = game:GetService("TweenService")
@@ -76,8 +77,8 @@ function Lumina:CreateWindow(config)
     -- Notification Holder Container (Top-Right)
     local NotifHolder = Instance.new("Frame")
     NotifHolder.Name = "NotificationHolder"
-    NotifHolder.Size = UDim2.new(0, 300, 1, -20)
-    NotifHolder.Position = UDim2.new(1, -315, 0, 10)
+    NotifHolder.Size = UDim2.new(0, 280, 1, -40)
+    NotifHolder.Position = UDim2.new(1, -295, 0, 20)
     NotifHolder.BackgroundTransparency = 1
     NotifHolder.Parent = ScreenGui
 
@@ -95,7 +96,7 @@ function Lumina:CreateWindow(config)
     ShadowHolder.BackgroundTransparency = 1
     ShadowHolder.Image = "rbxassetid://6014261993"
     ShadowHolder.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    ShadowHolder.ImageTransparency = 0.4
+    ShadowHolder.ImageTransparency = 0.35
     ShadowHolder.ScaleType = Enum.ScaleType.Slice
     ShadowHolder.SliceCenter = Rect.new(49, 49, 450, 450)
     ShadowHolder.Parent = ScreenGui
@@ -133,6 +134,7 @@ function Lumina:CreateWindow(config)
     HeaderCorner.CornerRadius = UDim.new(0, 10)
     HeaderCorner.Parent = Header
 
+    -- iOS Pill Handle Bar
     local iOSBar = Instance.new("Frame")
     iOSBar.Name = "iOSBar"
     iOSBar.Size = UDim2.new(0, 36, 0, 4)
@@ -191,73 +193,70 @@ function Lumina:CreateWindow(config)
 
     local WindowObj = { Tabs = {}, CurrentTab = nil }
 
-    -- ================================================================================
-    -- NOTIFICATION SYSTEM (WindUI / Luna Style with Shrinking Progress Bar)
-    -- ================================================================================
-    function WindowObj:Notify(notifConfig)
-        local nTitle = notifConfig.Title or "Notification"
-        local nContent = notifConfig.Content or ""
-        local nDuration = notifConfig.Duration or 4
+    -- Toast Notification System with Animated Countdown Progress Bar
+    function WindowObj:Notify(config)
+        config = config or {}
+        local title = config.Title or "Notification"
+        local content = config.Content or "Action executed successfully."
+        local duration = config.Duration or 4
 
-        local NotifFrame = Instance.new("Frame")
-        NotifFrame.Size = UDim2.new(1, 0, 0, 65)
-        NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-        NotifFrame.BackgroundTransparency = 0.2
-        NotifFrame.BorderSizePixel = 0
-        NotifFrame.ClipsDescendants = true
-        NotifFrame.Parent = NotifHolder
+        local NotifCard = Instance.new("Frame")
+        NotifCard.Size = UDim2.new(1, 0, 0, 64)
+        NotifCard.BackgroundColor3 = Color3.fromRGB(15, 15, 19)
+        NotifCard.BackgroundTransparency = 0.2
+        NotifCard.Position = UDim2.new(1, 30, 0, 0)
+        NotifCard.Parent = NotifHolder
 
-        local NotifCorner = Instance.new("UICorner")
-        NotifCorner.CornerRadius = UDim.new(0, 6)
-        NotifCorner.Parent = NotifFrame
+        Instance.new("UICorner", NotifCard).CornerRadius = UDim.new(0, 8)
+        local nStroke = Instance.new("UIStroke", NotifCard)
+        nStroke.Color = Color3.fromRGB(255, 255, 255)
+        nStroke.Transparency = 0.85
 
-        local NotifStroke = Instance.new("UIStroke")
-        NotifStroke.Color = Color3.fromRGB(255, 255, 255)
-        NotifStroke.Transparency = 0.85
-        NotifStroke.Thickness = 1
-        NotifStroke.Parent = NotifFrame
+        local nTitle = Instance.new("TextLabel", NotifCard)
+        nTitle.Size = UDim2.new(1, -20, 0, 20)
+        nTitle.Position = UDim2.new(0, 10, 0, 8)
+        nTitle.BackgroundTransparency = 1
+        nTitle.Text = title
+        nTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nTitle.TextSize = 12
+        nTitle.Font = Enum.Font.GothamBold
+        nTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-        local TitleLbl = Instance.new("TextLabel")
-        TitleLbl.Size = UDim2.new(1, -20, 0, 20)
-        TitleLbl.Position = UDim2.new(0, 10, 0, 8)
-        TitleLbl.BackgroundTransparency = 1
-        TitleLbl.Text = nTitle
-        TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TitleLbl.TextSize = 13
-        TitleLbl.Font = Enum.Font.GothamBold
-        TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-        TitleLbl.Parent = NotifFrame
+        local nDesc = Instance.new("TextLabel", NotifCard)
+        nDesc.Size = UDim2.new(1, -20, 0, 18)
+        nDesc.Position = UDim2.new(0, 10, 0, 28)
+        nDesc.BackgroundTransparency = 1
+        nDesc.Text = content
+        nDesc.TextColor3 = Color3.fromRGB(180, 180, 190)
+        nDesc.TextSize = 11
+        nDesc.Font = Enum.Font.Gotham
+        nDesc.TextXAlignment = Enum.TextXAlignment.Left
 
-        local DescLbl = Instance.new("TextLabel")
-        DescLbl.Size = UDim2.new(1, -20, 0, 20)
-        DescLbl.Position = UDim2.new(0, 10, 0, 28)
-        DescLbl.BackgroundTransparency = 1
-        DescLbl.Text = nContent
-        DescLbl.TextColor3 = Color3.fromRGB(170, 170, 180)
-        DescLbl.TextSize = 11
-        DescLbl.Font = Enum.Font.Gotham
-        DescLbl.TextXAlignment = Enum.TextXAlignment.Left
-        DescLbl.Parent = NotifFrame
+        -- Countdown Progress Bar
+        local BarTrack = Instance.new("Frame", NotifCard)
+        BarTrack.Size = UDim2.new(1, -20, 0, 3)
+        BarTrack.Position = UDim2.new(0, 10, 1, -8)
+        BarTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        Instance.new("UICorner", BarTrack).CornerRadius = UDim.new(1, 0)
 
-        -- Countdown Progress Bar Line at bottom
-        local ProgressBar = Instance.new("Frame")
-        ProgressBar.Size = UDim2.new(1, 0, 0, 3)
-        ProgressBar.Position = UDim2.new(0, 0, 1, -3)
-        ProgressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        ProgressBar.BorderSizePixel = 0
-        ProgressBar.Parent = NotifFrame
+        local BarFill = Instance.new("Frame", BarTrack)
+        BarFill.Size = UDim2.new(1, 0, 1, 0)
+        BarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
 
-        -- Slide-in entry animation
-        NotifFrame.Position = UDim2.new(1, 50, 0, 0)
-        Tween(NotifFrame, {Position = UDim2.new(0, 0, 0, 0)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        -- Slide In
+        Tween(NotifCard, {Position = UDim2.new(0, 0, 0, 0)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-        -- Shrink progress bar smoothly over the specified duration
-        Tween(ProgressBar, {Size = UDim2.new(0, 0, 0, 3)}, nDuration, Enum.EasingStyle.Linear)
+        -- Shrink Bar over Duration
+        local tweenBar = TweenService:Create(BarFill, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 1, 0)})
+        tweenBar:Play()
 
-        task.delay(nDuration, function()
-            Tween(NotifFrame, {Position = UDim2.new(1, 50, 0, 0)}, 0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-            task.wait(0.3)
-            NotifFrame:Destroy()
+        task.spawn(function()
+            task.wait(duration)
+            -- Slide Out & Destroy
+            Tween(NotifCard, {Position = UDim2.new(1, 30, 0, 0), BackgroundTransparency = 1}, 0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+            task.wait(0.25)
+            NotifCard:Destroy()
         end)
     end
 
@@ -323,12 +322,13 @@ function Lumina:CreateWindow(config)
         -- Component Generators
         function TabObj:CreateButton(name, callback)
             callback = callback or function() end
-            local btn = Instance.new("TextButton", Container)
+            local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(1, 0, 0, 34)
             btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
             btn.BackgroundTransparency = 0.3
             btn.AutoButtonColor = false
             btn.Text = ""
+            btn.Parent = Container
 
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
             local stroke = Instance.new("UIStroke", btn)
@@ -567,4 +567,84 @@ function Lumina:CreateWindow(config)
 
             local hueSlider = Instance.new("Frame", frame)
             hueSlider.Size = UDim2.new(1, -20, 0, 14)
-            hueSlider.
+            hueSlider.Position = UDim2.new(0, 10, 0, 42)
+            hueSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Instance.new("UICorner", hueSlider).CornerRadius = UDim.new(0, 4)
+
+            local grad = Instance.new("UIGradient", hueSlider)
+            grad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+                ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+                ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+                ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+                ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+                ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+            })
+
+            local picking = false
+            local function updateColor(input)
+                local pos = math.clamp((input.Position.X - hueSlider.AbsolutePosition.X) / hueSlider.AbsoluteSize.X, 0, 1)
+                local col = Color3.fromHSV(pos, 1, 1)
+                preview.BackgroundColor3 = col
+                callback(col)
+            end
+
+            hueSlider.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    picking = true; updateColor(input)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    picking = false
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if picking and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    updateColor(input)
+                end
+            end)
+
+            btn.MouseButton1Click:Connect(function()
+                expanded = not expanded
+                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and 68 or 34)})
+            end)
+        end
+
+        return TabObj
+    end
+
+    -- Built-in Demo Method with Toast Notifications
+    function WindowObj:Demo()
+        local t1 = self:CreateTab("Demo Controls")
+        
+        t1:CreateButton("Test Notification", function()
+            self:Notify({
+                Title = "Success!",
+                Content = "This is a WindUI / Rayfield styled alert.",
+                Duration = 4
+            })
+        end)
+
+        t1:CreateToggle("Enable GodMode", true, function(state) 
+            self:Notify({ Title = "Toggle Changed", Content = "GodMode is now " .. tostring(state), Duration = 3 })
+        end)
+
+        t1:CreateSlider("WalkSpeed", 16, 120, 16, function(val) 
+            -- print("Speed:", val) 
+        end)
+
+        t1:CreateDropdown("Theme Mode", {"Dark", "AMOLED", "Midnight"}, function(opt) 
+            self:Notify({ Title = "Theme Selected", Content = "Preset set to " .. opt, Duration = 3 })
+        end)
+
+        t1:CreateColorPicker("Accent Color", Color3.fromRGB(255, 255, 255), function(col) 
+            -- print("Color:", col)
+        end)
+    end
+
+    return WindowObj
+end
+
+return Lumina
