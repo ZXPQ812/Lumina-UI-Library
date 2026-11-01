@@ -1,16 +1,15 @@
 --[[
-    Lumina UI Library v3.1 (Fixed & Production Ready)
-    - Bottom iOS Grabber Pill Dragging with 0.2s Smooth Delay
-    - Dynamic Lighting Blur Effect
-    - Layered Soft Drop Shadows
-    - Animated Toast Notifications with Countdown Bars
+    Lumina UI Library v4.0 (Ultimate Fluent & WindUI Edition)
+    - 1:1 Instant Dragging on Header & Bottom iOS Grabber
+    - 0.34 Deep Black Glassmorphic Background Transparency
+    - Customizable Toggle Keybind (LeftControl default)
+    - Animated Toast Notifications with Countdown Progress Bars
+    - Full Component Suite (Buttons, Toggles, Sliders, Dropdowns, Color Pickers)
 --]]
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
@@ -18,7 +17,7 @@ local Lumina = {}
 Lumina.__index = Lumina
 
 local function Tween(instance, properties, duration, style, direction)
-    duration = duration or 0.25
+    duration = duration or 0.22
     style = style or Enum.EasingStyle.Quart
     direction = direction or Enum.EasingDirection.Out
     local tween = TweenService:Create(instance, TweenInfo.new(duration, style, direction), properties)
@@ -26,17 +25,16 @@ local function Tween(instance, properties, duration, style, direction)
     return tween
 end
 
--- Smooth Bottom iOS Bar Dragging Mechanism (0.2s lag/interpolation feel)
-local function MakeSmoothBottomDraggable(dragHandle, targetFrame)
+-- 1:1 Butter-Smooth Dragging Mechanism (Attached to Header & Bottom iOS Bar)
+local function MakeDraggable(dragHandle, targetFrame)
     local dragging = false
     local dragInput, dragStart, startPos
-    local targetPos = targetFrame.Position
 
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
-            startPos = targetFrame.AbsolutePosition
+            startPos = targetFrame.Position
 
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
@@ -55,22 +53,11 @@ local function MakeSmoothBottomDraggable(dragHandle, targetFrame)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            local screenGui = targetFrame.Parent
-            if screenGui then
-                local newX = startPos.X + delta.X
-                local newY = startPos.Y + delta.Y
-                targetPos = UDim2.new(0, newX + (targetFrame.AbsoluteSize.X / 2), 0, newY + (targetFrame.AbsoluteSize.Y / 2))
-            end
-        end
-    end)
-
-    RunService.RenderStepped:Connect(function(dt)
-        if dragging or (targetFrame.Position - targetPos).Magnitude > 0.1 then
-            local currentPos = targetFrame.Position
-            local alpha = math.clamp(dt * 12, 0, 1)
             targetFrame.Position = UDim2.new(
-                currentPos.X.Scale, currentPos.X.Offset + (targetPos.X.Offset - currentPos.X.Offset) * alpha,
-                currentPos.Y.Scale, currentPos.Y.Offset + (targetPos.Y.Offset - currentPos.Y.Offset) * alpha
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
             )
         end
     end)
@@ -79,8 +66,14 @@ end
 function Lumina:CreateWindow(config)
     config = config or {}
     local titleText = config.Title or "LUMINA UI"
+    local subTitleText = config.SubTitle or ""
+    
+    -- Keybind handling (Default to LeftControl)
+    local toggleKey = config.Keybind or Enum.KeyCode.LeftControl
+    if typeof(toggleKey) == "string" then
+        toggleKey = Enum.KeyCode[toggleKey] or Enum.KeyCode.LeftControl
+    end
 
-    -- Robust parent container resolution for both Studio and Executors
     local success, parentGui = pcall(function()
         return (syn and CoreGui) or (gethui and gethui()) or LocalPlayer:WaitForChild("PlayerGui")
     end)
@@ -92,30 +85,17 @@ function Lumina:CreateWindow(config)
         parentGui.LuminaUI:Destroy()
     end
 
-    -- Dynamic Blur Effect (Fluent Style)
-    local Blur = Lighting:FindFirstChild("LuminaBlur")
-    if not Blur then
-        Blur = Instance.new("BlurEffect")
-        Blur.Name = "LuminaBlur"
-        Blur.Size = 12
-        Blur.Parent = Lighting
-    end
-
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "LuminaUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = parentGui
 
-    ScreenGui.Destroying:Connect(function()
-        if Blur then Blur:Destroy() end
-    end)
-
     -- Notification Holder Container (Top-Right)
     local NotifHolder = Instance.new("Frame")
     NotifHolder.Name = "NotificationHolder"
-    NotifHolder.Size = UDim2.new(0, 300, 1, -40)
-    NotifHolder.Position = UDim2.new(1, -315, 0, 20)
+    NotifHolder.Size = UDim2.new(0, 310, 1, -40)
+    NotifHolder.Position = UDim2.new(1, -325, 0, 20)
     NotifHolder.BackgroundTransparency = 1
     NotifHolder.Parent = ScreenGui
 
@@ -125,25 +105,31 @@ function Lumina:CreateWindow(config)
     NotifLayout.Padding = UDim.new(0, 8)
     NotifLayout.Parent = NotifHolder
 
-    -- Rayfield/WindUI Soft Drop Shadow Container
+    -- Rayfield / WindUI Style Soft Drop Shadow Container
     local ShadowHolder = Instance.new("ImageLabel")
     ShadowHolder.Name = "ShadowHolder"
     ShadowHolder.Size = UDim2.new(0, 580, 0, 380)
-    ShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
-    ShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+    ShadowHolder.Position = UDim2.new(0.5, -290, 0.5, -190)
     ShadowHolder.BackgroundTransparency = 1
     ShadowHolder.Image = "rbxassetid://6014261993"
     ShadowHolder.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    ShadowHolder.ImageTransparency = 0.3
+    ShadowHolder.ImageTransparency = 0.35
     ShadowHolder.ScaleType = Enum.ScaleType.Slice
     ShadowHolder.SliceCenter = Rect.new(49, 49, 450, 450)
     ShadowHolder.Parent = ScreenGui
 
-    -- Main Container Frame (Background Transparency: 0.34)
+    -- Keybind Toggle Listener
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.KeyCode == toggleKey then
+            ShadowHolder.Visible = not ShadowHolder.Visible
+        end
+    end)
+
+    -- Main Container Frame (Background Transparency set precisely to 0.34)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(1, 0, 1, 0)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 13)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(11, 11, 14)
     MainFrame.BackgroundTransparency = 0.34
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -159,10 +145,10 @@ function Lumina:CreateWindow(config)
     MainStroke.Thickness = 1.2
     MainStroke.Parent = MainFrame
 
-    -- Header Bar
+    -- Header Bar (Manual Drag Handle 1)
     local Header = Instance.new("Frame")
     Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 42)
+    Header.Size = UDim2.new(1, 0, 0, 44)
     Header.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
     Header.BackgroundTransparency = 0.2
     Header.BorderSizePixel = 0
@@ -174,8 +160,8 @@ function Lumina:CreateWindow(config)
 
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
-    TitleLabel.Size = UDim2.new(1, -20, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 16, 0, 0)
+    TitleLabel.Size = UDim2.new(1, -20, 0, 20)
+    TitleLabel.Position = UDim2.new(0, 16, 0, 6)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = titleText
     TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -184,11 +170,25 @@ function Lumina:CreateWindow(config)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = Header
 
-    -- Bottom iOS Grabber Bar (Draggable Handle)
+    local SubTitleLabel = Instance.new("TextLabel")
+    SubTitleLabel.Name = "SubTitle"
+    SubTitleLabel.Size = UDim2.new(1, -20, 0, 16)
+    SubTitleLabel.Position = UDim2.new(0, 16, 0, 24)
+    SubTitleLabel.BackgroundTransparency = 1
+    SubTitleLabel.Text = subTitleText
+    SubTitleLabel.TextColor3 = Color3.fromRGB(150, 150, 165)
+    SubTitleLabel.TextSize = 11
+    SubTitleLabel.Font = Enum.Font.Gotham
+    SubTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SubTitleLabel.Parent = Header
+
+    MakeDraggable(Header, ShadowHolder)
+
+    -- Bottom iOS Grabber Bar (Manual Drag Handle 2)
     local BottomBarHolder = Instance.new("Frame")
     BottomBarHolder.Name = "BottomBarHolder"
-    BottomBarHolder.Size = UDim2.new(1, 0, 0, 22)
-    BottomBarHolder.Position = UDim2.new(0, 0, 1, -22)
+    BottomBarHolder.Size = UDim2.new(1, 0, 0, 24)
+    BottomBarHolder.Position = UDim2.new(0, 0, 1, -24)
     BottomBarHolder.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
     BottomBarHolder.BackgroundTransparency = 0.5
     BottomBarHolder.BorderSizePixel = 0
@@ -211,13 +211,13 @@ function Lumina:CreateWindow(config)
     GrabberCorner.CornerRadius = UDim.new(1, 0)
     GrabberCorner.Parent = iOSGrabber
 
-    MakeSmoothBottomDraggable(BottomBarHolder, ShadowHolder)
+    MakeDraggable(BottomBarHolder, ShadowHolder)
 
     -- Sidebar & Content Layout
     local Sidebar = Instance.new("ScrollingFrame")
     Sidebar.Name = "Sidebar"
-    Sidebar.Size = UDim2.new(0, 140, 1, -64)
-    Sidebar.Position = UDim2.new(0, 0, 0, 42)
+    Sidebar.Size = UDim2.new(0, 145, 1, -68)
+    Sidebar.Position = UDim2.new(0, 0, 0, 44)
     Sidebar.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
     Sidebar.BackgroundTransparency = 0.6
     Sidebar.BorderSizePixel = 0
@@ -237,8 +237,8 @@ function Lumina:CreateWindow(config)
 
     local ContainerFolder = Instance.new("Frame")
     ContainerFolder.Name = "Containers"
-    ContainerFolder.Size = UDim2.new(1, -140, 1, -64)
-    ContainerFolder.Position = UDim2.new(0, 140, 0, 42)
+    ContainerFolder.Size = UDim2.new(1, -145, 1, -68)
+    ContainerFolder.Position = UDim2.new(0, 145, 0, 44)
     ContainerFolder.BackgroundTransparency = 1
     ContainerFolder.Parent = MainFrame
 
@@ -367,66 +367,68 @@ function Lumina:CreateWindow(config)
         if #WindowObj.Tabs == 0 then ActivateTab() end
         table.insert(WindowObj.Tabs, TabObj)
 
+        -- Component: Button
         function TabObj:CreateButton(name, callback)
             callback = callback or function() end
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 34)
-            btn.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+            btn.Size = UDim2.new(1, 0, 0, 36)
+            btn.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
             btn.BackgroundTransparency = 0.3
             btn.AutoButtonColor = false
             btn.Text = ""
             btn.Parent = Container
 
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
             local stroke = Instance.new("UIStroke", btn)
             stroke.Color = Color3.fromRGB(255, 255, 255)
-            stroke.Transparency = 0.9
+            stroke.Transparency = 0.88
 
             local lbl = Instance.new("TextLabel", btn)
             lbl.Size = UDim2.new(1, 0, 1, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+            lbl.TextColor3 = Color3.fromRGB(235, 235, 245)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.GothamSemibold
 
             btn.MouseButton1Click:Connect(callback)
         end
 
+        -- Component: Toggle
         function TabObj:CreateToggle(name, default, callback)
             local toggled = default or false
             callback = callback or function() end
 
             local frame = Instance.new("Frame", Container)
-            frame.Size = UDim2.new(1, 0, 0, 34)
-            frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+            frame.Size = UDim2.new(1, 0, 0, 36)
+            frame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
             frame.BackgroundTransparency = 0.3
 
-            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
             local stroke = Instance.new("UIStroke", frame)
             stroke.Color = Color3.fromRGB(255, 255, 255)
-            stroke.Transparency = 0.9
+            stroke.Transparency = 0.88
 
             local lbl = Instance.new("TextLabel", frame)
             lbl.Size = UDim2.new(1, -50, 1, 0)
-            lbl.Position = UDim2.new(0, 10, 0, 0)
+            lbl.Position = UDim2.new(0, 12, 0, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+            lbl.TextColor3 = Color3.fromRGB(235, 235, 245)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left
 
             local track = Instance.new("Frame", frame)
-            track.Size = UDim2.new(0, 34, 0, 18)
-            track.Position = UDim2.new(1, -42, 0.5, -9)
+            track.Size = UDim2.new(0, 36, 0, 18)
+            track.Position = UDim2.new(1, -44, 0.5, -9)
             track.BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(38, 38, 48)
             Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
             local knob = Instance.new("Frame", track)
             knob.Size = UDim2.new(0, 12, 0, 12)
             knob.Position = toggled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)
-            knob.BackgroundColor3 = toggled and Color3.fromRGB(10, 10, 13) or Color3.fromRGB(160, 160, 175)
+            knob.BackgroundColor3 = toggled and Color3.fromRGB(11, 11, 14) or Color3.fromRGB(160, 160, 175)
             Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
             local btn = Instance.new("TextButton", frame)
@@ -438,39 +440,40 @@ function Lumina:CreateWindow(config)
                 toggled = not toggled
                 Tween(track, {BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(38, 38, 48)})
                 Tween(knob, {Position = toggled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)})
-                Tween(knob, {BackgroundColor3 = toggled and Color3.fromRGB(10, 10, 13) or Color3.fromRGB(160, 160, 175)})
+                Tween(knob, {BackgroundColor3 = toggled and Color3.fromRGB(11, 11, 14) or Color3.fromRGB(160, 160, 175)})
                 callback(toggled)
             end)
         end
 
+        -- Component: Slider
         function TabObj:CreateSlider(name, min, max, default, callback)
             min = min or 0; max = max or 100
             default = math.clamp(default or min, min, max)
             callback = callback or function() end
 
             local frame = Instance.new("Frame", Container)
-            frame.Size = UDim2.new(1, 0, 0, 46)
-            frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+            frame.Size = UDim2.new(1, 0, 0, 50)
+            frame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
             frame.BackgroundTransparency = 0.3
 
-            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
             local stroke = Instance.new("UIStroke", frame)
             stroke.Color = Color3.fromRGB(255, 255, 255)
-            stroke.Transparency = 0.9
+            stroke.Transparency = 0.88
 
             local lbl = Instance.new("TextLabel", frame)
             lbl.Size = UDim2.new(1, -50, 0, 20)
-            lbl.Position = UDim2.new(0, 10, 0, 4)
+            lbl.Position = UDim2.new(0, 12, 0, 6)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+            lbl.TextColor3 = Color3.fromRGB(235, 235, 245)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left
 
             local vlbl = Instance.new("TextLabel", frame)
             vlbl.Size = UDim2.new(0, 40, 0, 20)
-            vlbl.Position = UDim2.new(1, -48, 0, 4)
+            vlbl.Position = UDim2.new(1, -50, 0, 6)
             vlbl.BackgroundTransparency = 1
             vlbl.Text = tostring(default)
             vlbl.TextColor3 = Color3.fromRGB(180, 180, 195)
@@ -479,8 +482,8 @@ function Lumina:CreateWindow(config)
             vlbl.TextXAlignment = Enum.TextXAlignment.Right
 
             local track = Instance.new("Frame", frame)
-            track.Size = UDim2.new(1, -20, 0, 5)
-            track.Position = UDim2.new(0, 10, 1, -12)
+            track.Size = UDim2.new(1, -24, 0, 5)
+            track.Position = UDim2.new(0, 12, 1, -14)
             track.BackgroundColor3 = Color3.fromRGB(38, 38, 48)
             Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
@@ -515,47 +518,48 @@ function Lumina:CreateWindow(config)
             end)
         end
 
+        -- Component: Dropdown
         function TabObj:CreateDropdown(name, options, callback)
             options = options or {}
             callback = callback or function() end
             local expanded = false
 
             local frame = Instance.new("Frame", Container)
-            frame.Size = UDim2.new(1, 0, 0, 34)
-            frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+            frame.Size = UDim2.new(1, 0, 0, 36)
+            frame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
             frame.BackgroundTransparency = 0.3
             frame.ClipsDescendants = true
 
-            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
             local stroke = Instance.new("UIStroke", frame)
             stroke.Color = Color3.fromRGB(255, 255, 255)
-            stroke.Transparency = 0.9
+            stroke.Transparency = 0.88
 
             local btn = Instance.new("TextButton", frame)
-            btn.Size = UDim2.new(1, 0, 0, 34)
+            btn.Size = UDim2.new(1, 0, 0, 36)
             btn.BackgroundTransparency = 1
             btn.Text = ""
 
             local lbl = Instance.new("TextLabel", btn)
-            lbl.Size = UDim2.new(1, -30, 0, 34)
-            lbl.Position = UDim2.new(0, 10, 0, 0)
+            lbl.Size = UDim2.new(1, -30, 0, 36)
+            lbl.Position = UDim2.new(0, 12, 0, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+            lbl.TextColor3 = Color3.fromRGB(235, 235, 245)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left
 
             local optList = Instance.new("Frame", frame)
-            optList.Size = UDim2.new(1, 0, 0, #options * 26)
-            optList.Position = UDim2.new(0, 0, 0, 34)
+            optList.Size = UDim2.new(1, 0, 0, #options * 28)
+            optList.Position = UDim2.new(0, 0, 0, 36)
             optList.BackgroundTransparency = 1
             local listLayout = Instance.new("UIListLayout", optList)
             listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
             for _, opt in ipairs(options) do
                 local optBtn = Instance.new("TextButton", optList)
-                optBtn.Size = UDim2.new(1, 0, 0, 26)
+                optBtn.Size = UDim2.new(1, 0, 0, 28)
                 optBtn.BackgroundTransparency = 1
                 optBtn.Text = opt
                 optBtn.TextColor3 = Color3.fromRGB(170, 170, 185)
@@ -565,40 +569,106 @@ function Lumina:CreateWindow(config)
                 optBtn.MouseButton1Click:Connect(function()
                     lbl.Text = name .. ": " .. opt
                     expanded = false
-                    Tween(frame, {Size = UDim2.new(1, 0, 0, 34)})
+                    Tween(frame, {Size = UDim2.new(1, 0, 0, 36)})
                     callback(opt)
                 end)
             end
 
             btn.MouseButton1Click:Connect(function()
                 expanded = not expanded
-                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and (34 + (#options * 26)) or 34)})
+                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and (36 + (#options * 28)) or 36)})
+            end)
+        end
+
+        -- Component: Color Picker
+        function TabObj:CreateColorPicker(name, default, callback)
+            default = default or Color3.fromRGB(255, 255, 255)
+            callback = callback or function() end
+            local expanded = false
+
+            local frame = Instance.new("Frame", Container)
+            frame.Size = UDim2.new(1, 0, 0, 36)
+            frame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+            frame.BackgroundTransparency = 0.3
+            frame.ClipsDescendants = true
+
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+            local stroke = Instance.new("UIStroke", frame)
+            stroke.Color = Color3.fromRGB(255, 255, 255)
+            stroke.Transparency = 0.88
+
+            local btn = Instance.new("TextButton", frame)
+            btn.Size = UDim2.new(1, 0, 0, 36)
+            btn.BackgroundTransparency = 1
+            btn.Text = ""
+
+            local lbl = Instance.new("TextLabel", btn)
+            lbl.Size = UDim2.new(1, -50, 0, 36)
+            lbl.Position = UDim2.new(0, 12, 0, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = name
+            lbl.TextColor3 = Color3.fromRGB(235, 235, 245)
+            lbl.TextSize = 12
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+            local preview = Instance.new("Frame", btn)
+            preview.Size = UDim2.new(0, 24, 0, 16)
+            preview.Position = UDim2.new(1, -34, 0.5, -8)
+            preview.BackgroundColor3 = default
+            Instance.new("UICorner", preview).CornerRadius = UDim.new(0, 4)
+            local pStroke = Instance.new("UIStroke", preview)
+            pStroke.Color = Color3.fromRGB(255, 255, 255)
+            pStroke.Transparency = 0.7
+
+            local hueSlider = Instance.new("Frame", frame)
+            hueSlider.Size = UDim2.new(1, -24, 0, 14)
+            hueSlider.Position = UDim2.new(0, 12, 0, 44)
+            hueSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Instance.new("UICorner", hueSlider).CornerRadius = UDim.new(0, 4)
+
+            local grad = Instance.new("UIGradient", hueSlider)
+            grad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+                ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+                ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+                ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+                ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+                ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+            })
+
+            local picking = false
+            local function updateColor(input)
+                local pos = math.clamp((input.Position.X - hueSlider.AbsolutePosition.X) / hueSlider.AbsoluteSize.X, 0, 1)
+                local col = Color3.fromHSV(pos, 1, 1)
+                preview.BackgroundColor3 = col
+                callback(col)
+            end
+
+            hueSlider.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    picking = true; updateColor(input)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    picking = false
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if picking and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    updateColor(input)
+                end
+            end)
+
+            btn.MouseButton1Click:Connect(function()
+                expanded = not expanded
+                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and 72 or 36)})
             end)
         end
 
         return TabObj
-    end
-
-    function WindowObj:Demo()
-        local t1 = self:CreateTab("Demo & Features")
-        
-        t1:CreateButton("Test Notification", function()
-            self:Notify({
-                Title = "Fluent & WindUI Alert",
-                Content = "Countdown progress bar running smoothly!",
-                Duration = 4
-            })
-        end)
-
-        t1:CreateToggle("God Mode", true, function(state) 
-            self:Notify({ Title = "Toggle Changed", Content = "GodMode state: " .. tostring(state), Duration = 3 })
-        end)
-
-        t1:CreateSlider("WalkSpeed", 16, 120, 16, function(val) end)
-
-        t1:CreateDropdown("Theme Preset", {"Dark", "AMOLED", "Midnight"}, function(opt) 
-            self:Notify({ Title = "Preset Loaded", Content = opt .. " mode active.", Duration = 3 })
-        end)
     end
 
     return WindowObj
