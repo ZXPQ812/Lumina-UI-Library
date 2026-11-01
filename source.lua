@@ -1,10 +1,10 @@
 --[[
-    Lumina UI Library v4.0 (Ultimate Fluent & WindUI Edition)
-    - 1:1 Instant Dragging on Header & Bottom iOS Grabber
-    - 0.34 Deep Black Glassmorphic Background Transparency
-    - Customizable Toggle Keybind (LeftControl default)
-    - Animated Toast Notifications with Countdown Progress Bars
-    - Full Component Suite (Buttons, Toggles, Sliders, Dropdowns, Color Pickers)
+    Lumina UI Library v5.0 (Fluent, Rayfield & WindUI Fusion)
+    - 1:1 Instant Manual Dragging (Header & Bottom iOS Bar)
+    - Localized Dark Glass Acrylic (0.34 Transparency)
+    - Soft Drop Shadows & Translucent Strokes
+    - Customizable Keybind Toggle (Default: LeftControl)
+    - Toast Notifications with Animated Countdown Progress Bars
 --]]
 
 local TweenService = game:GetService("TweenService")
@@ -17,7 +17,7 @@ local Lumina = {}
 Lumina.__index = Lumina
 
 local function Tween(instance, properties, duration, style, direction)
-    duration = duration or 0.22
+    duration = duration or 0.2
     style = style or Enum.EasingStyle.Quart
     direction = direction or Enum.EasingDirection.Out
     local tween = TweenService:Create(instance, TweenInfo.new(duration, style, direction), properties)
@@ -25,7 +25,7 @@ local function Tween(instance, properties, duration, style, direction)
     return tween
 end
 
--- 1:1 Butter-Smooth Dragging Mechanism (Attached to Header & Bottom iOS Bar)
+-- 1:1 Instant Dragging Mechanism for Header and Bottom iOS Bar
 local function MakeDraggable(dragHandle, targetFrame)
     local dragging = false
     local dragInput, dragStart, startPos
@@ -105,7 +105,7 @@ function Lumina:CreateWindow(config)
     NotifLayout.Padding = UDim.new(0, 8)
     NotifLayout.Parent = NotifHolder
 
-    -- Rayfield / WindUI Style Soft Drop Shadow Container
+    -- Rayfield & WindUI Style Soft Drop Shadow Container
     local ShadowHolder = Instance.new("ImageLabel")
     ShadowHolder.Name = "ShadowHolder"
     ShadowHolder.Size = UDim2.new(0, 580, 0, 380)
@@ -118,14 +118,14 @@ function Lumina:CreateWindow(config)
     ShadowHolder.SliceCenter = Rect.new(49, 49, 450, 450)
     ShadowHolder.Parent = ScreenGui
 
-    -- Keybind Toggle Listener
+    -- Keybind Toggle Visibility Listener
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if input.KeyCode == toggleKey then
+        if not gameProcessed and input.KeyCode == toggleKey then
             ShadowHolder.Visible = not ShadowHolder.Visible
         end
     end)
 
-    -- Main Container Frame (Background Transparency set precisely to 0.34)
+    -- Main Glass Container Frame (Background Transparency: 0.34)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -145,7 +145,7 @@ function Lumina:CreateWindow(config)
     MainStroke.Thickness = 1.2
     MainStroke.Parent = MainFrame
 
-    -- Header Bar (Manual Drag Handle 1)
+    -- Header Bar (Draggable Handle 1)
     local Header = Instance.new("Frame")
     Header.Name = "Header"
     Header.Size = UDim2.new(1, 0, 0, 44)
@@ -184,7 +184,7 @@ function Lumina:CreateWindow(config)
 
     MakeDraggable(Header, ShadowHolder)
 
-    -- Bottom iOS Grabber Bar (Manual Drag Handle 2)
+    -- Bottom iOS Grabber Pill Bar (Draggable Handle 2)
     local BottomBarHolder = Instance.new("Frame")
     BottomBarHolder.Name = "BottomBarHolder"
     BottomBarHolder.Size = UDim2.new(1, 0, 0, 24)
