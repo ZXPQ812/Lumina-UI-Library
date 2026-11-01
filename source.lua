@@ -1,14 +1,17 @@
 --[[
-    Lumina UI Library v2.0
-    - iOS Pill Bar Draggable Header
-    - 0.34 Background Transparency
-    - Rayfield / WindUI Drop Shadows
-    - Animated Toast Notifications with Countdown Progress Bars
+    Lumina UI Library v3.0 (Fluent & WindUI Inspired)
+    - Bottom iOS Grabber Pill Dragging with Smooth Interpolation
+    - Dynamic Lighting Blur Effect
+    - Layered Soft Drop Shadows
+    - Animated Toast Notifications with Countdown Bars
+    - High-End Micro-Interactions & Dark Aesthetics
 --]]
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -24,16 +27,19 @@ local function Tween(instance, properties, duration, style, direction)
     return tween
 end
 
--- iOS Style Pill Bar Draggable Mechanism
-local function MakeDraggable(dragHandle, targetFrame)
+-- ============================================================================
+-- AUTHENTIC BOTTOM iOS BAR DRAGGING WITH SMOOTH DELAY INTERPOLATION
+-- ============================================================================
+local function MakeSmoothBottomDraggable(dragHandle, targetFrame)
     local dragging = false
     local dragInput, dragStart, startPos
+    local targetPos = targetFrame.Position
 
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
-            startPos = targetFrame.Position
+            startPos = targetFrame.AbsolutePosition
 
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
@@ -52,9 +58,25 @@ local function MakeDraggable(dragHandle, targetFrame)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            Tween(targetFrame, {
-                Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            }, 0.1, Enum.EasingStyle.Sine)
+            local screenGui = targetFrame.Parent
+            if screenGui then
+                local viewportSize = screenGui.AbsoluteSize
+                local newX = startPos.X + delta.X
+                local newY = startPos.Y + delta.Y
+                targetPos = UDim2.new(0, newX + (targetFrame.AbsoluteSize.X / 2), 0, newY + (targetFrame.AbsoluteSize.Y / 2))
+            end
+        end
+    end)
+
+    -- Smooth Spring/Tween interpolation loop (0.2s lag/delay effect like mobile/fluent overlays)
+    RunService.RenderStepped:Connect(function(dt)
+        if dragging or (targetFrame.Position - targetPos).Magnitude > 0.1 then
+            local currentPos = targetFrame.Position
+            local alpha = math.clamp(dt * 12, 0, 1) -- 0.2s smooth lag feel
+            targetFrame.Position = UDim2.new(
+                currentPos.X.Scale, currentPos.X.Offset + (targetPos.X.Offset - currentPos.X.Offset) * alpha,
+                currentPos.Y.Scale, currentPos.Y.Offset + (targetPos.Y.Offset - currentPos.Y.Offset) * alpha
+            )
         end
     end)
 end
@@ -68,17 +90,30 @@ function Lumina:CreateWindow(config)
         parentGui.LuminaUI:Destroy()
     end
 
+    -- Dynamic Blur Effect (Fluent Style)
+    local Blur = Lighting:FindFirstChild("LuminaBlur")
+    if not Blur then
+        Blur = Instance.new("BlurEffect")
+        Blur.Name = "LuminaBlur"
+        Blur.Size = 12
+        Blur.Parent = Lighting
+    end
+
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "LuminaUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = parentGui
 
+    ScreenGui.Destroying:Connect(function()
+        if Blur then Blur:Destroy() end
+    end)
+
     -- Notification Holder Container (Top-Right)
     local NotifHolder = Instance.new("Frame")
     NotifHolder.Name = "NotificationHolder"
-    NotifHolder.Size = UDim2.new(0, 280, 1, -40)
-    NotifHolder.Position = UDim2.new(1, -295, 0, 20)
+    NotifHolder.Size = UDim2.new(0, 300, 1, -40)
+    NotifHolder.Position = UDim2.new(1, -315, 0, 20)
     NotifHolder.BackgroundTransparency = 1
     NotifHolder.Parent = ScreenGui
 
@@ -88,31 +123,32 @@ function Lumina:CreateWindow(config)
     NotifLayout.Padding = UDim.new(0, 8)
     NotifLayout.Parent = NotifHolder
 
-    -- Rayfield-Style Soft Drop Shadow Container
+    -- Rayfield/WindUI Soft Drop Shadow Container
     local ShadowHolder = Instance.new("ImageLabel")
     ShadowHolder.Name = "ShadowHolder"
-    ShadowHolder.Size = UDim2.new(0, 560, 0, 360)
-    ShadowHolder.Position = UDim2.new(0.5, -280, 0.5, -180)
+    ShadowHolder.Size = UDim2.new(0, 580, 0, 380)
+    ShadowHolder.Position = UDim2.new(0.5, -290, 0.5, -190)
+    ShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
     ShadowHolder.BackgroundTransparency = 1
     ShadowHolder.Image = "rbxassetid://6014261993"
     ShadowHolder.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    ShadowHolder.ImageTransparency = 0.35
+    ShadowHolder.ImageTransparency = 0.3
     ShadowHolder.ScaleType = Enum.ScaleType.Slice
     ShadowHolder.SliceCenter = Rect.new(49, 49, 450, 450)
     ShadowHolder.Parent = ScreenGui
 
-    -- Main Frame (Background Transparency: 0.34)
+    -- Main Container Frame (Background Transparency: 0.34)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(1, 0, 1, 0)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 13)
     MainFrame.BackgroundTransparency = 0.34
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ShadowHolder
 
     local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 10)
+    MainCorner.CornerRadius = UDim.new(0, 12)
     MainCorner.Parent = MainFrame
 
     local MainStroke = Instance.new("UIStroke")
@@ -121,37 +157,23 @@ function Lumina:CreateWindow(config)
     MainStroke.Thickness = 1.2
     MainStroke.Parent = MainFrame
 
-    -- Header with iOS Pill Bar Draggable Handle
+    -- Header Bar
     local Header = Instance.new("Frame")
     Header.Name = "Header"
     Header.Size = UDim2.new(1, 0, 0, 42)
-    Header.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    Header.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
     Header.BackgroundTransparency = 0.2
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
 
     local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 10)
+    HeaderCorner.CornerRadius = UDim.new(0, 12)
     HeaderCorner.Parent = Header
-
-    -- iOS Pill Handle Bar
-    local iOSBar = Instance.new("Frame")
-    iOSBar.Name = "iOSBar"
-    iOSBar.Size = UDim2.new(0, 36, 0, 4)
-    iOSBar.Position = UDim2.new(0.5, -18, 0, 6)
-    iOSBar.BackgroundColor3 = Color3.fromRGB(200, 200, 210)
-    iOSBar.BackgroundTransparency = 0.4
-    iOSBar.BorderSizePixel = 0
-    iOSBar.Parent = Header
-
-    local iOSBarCorner = Instance.new("UICorner")
-    iOSBarCorner.CornerRadius = UDim.new(1, 0)
-    iOSBarCorner.Parent = iOSBar
 
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
-    TitleLabel.Size = UDim2.new(1, -20, 1, -10)
-    TitleLabel.Position = UDim2.new(0, 14, 0, 8)
+    TitleLabel.Size = UDim2.new(1, -20, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 16, 0, 0)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = titleText
     TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -160,22 +182,52 @@ function Lumina:CreateWindow(config)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = Header
 
-    MakeDraggable(Header, ShadowHolder)
+    -- ============================================================================
+    -- AUTHENTIC BOTTOM iOS GRABBER BAR (DRAGGABLE HANDLE AT THE BOTTOM)
+    -- ============================================================================
+    local BottomBarHolder = Instance.new("Frame")
+    BottomBarHolder.Name = "BottomBarHolder"
+    BottomBarHolder.Size = UDim2.new(1, 0, 0, 22)
+    BottomBarHolder.Position = UDim2.new(0, 0, 1, -22)
+    BottomBarHolder.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+    BottomBarHolder.BackgroundTransparency = 0.5
+    BottomBarHolder.BorderSizePixel = 0
+    BottomBarHolder.Parent = MainFrame
+
+    local BottomCorner = Instance.new("UICorner")
+    BottomCorner.CornerRadius = UDim.new(0, 12)
+    BottomCorner.Parent = BottomBarHolder
+
+    local iOSGrabber = Instance.new("Frame")
+    iOSGrabber.Name = "iOSGrabber"
+    iOSGrabber.Size = UDim2.new(0, 44, 0, 4)
+    iOSGrabber.Position = UDim2.new(0.5, -22, 0.5, -2)
+    iOSGrabber.BackgroundColor3 = Color3.fromRGB(200, 200, 215)
+    iOSGrabber.BackgroundTransparency = 0.3
+    iOSGrabber.BorderSizePixel = 0
+    iOSGrabber.Parent = BottomBarHolder
+
+    local GrabberCorner = Instance.new("UICorner")
+    GrabberCorner.CornerRadius = UDim.new(1, 0)
+    GrabberCorner.Parent = iOSGrabber
+
+    -- Enable Smooth Dragging via Bottom Bar
+    MakeSmoothBottomDraggable(BottomBarHolder, ShadowHolder)
 
     -- Sidebar & Content Layout
     local Sidebar = Instance.new("ScrollingFrame")
     Sidebar.Name = "Sidebar"
-    Sidebar.Size = UDim2.new(0, 135, 1, -42)
+    Sidebar.Size = UDim2.new(0, 140, 1, -64)
     Sidebar.Position = UDim2.new(0, 0, 0, 42)
-    Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-    Sidebar.BackgroundTransparency = 0.5
+    Sidebar.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+    Sidebar.BackgroundTransparency = 0.6
     Sidebar.BorderSizePixel = 0
     Sidebar.ScrollBarThickness = 2
     Sidebar.Parent = MainFrame
 
     local SidebarList = Instance.new("UIListLayout")
     SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
-    SidebarList.Padding = UDim.new(0, 5)
+    SidebarList.Padding = UDim.new(0, 6)
     SidebarList.Parent = Sidebar
 
     local SidebarPadding = Instance.new("UIPadding")
@@ -186,25 +238,25 @@ function Lumina:CreateWindow(config)
 
     local ContainerFolder = Instance.new("Frame")
     ContainerFolder.Name = "Containers"
-    ContainerFolder.Size = UDim2.new(1, -135, 1, -42)
-    ContainerFolder.Position = UDim2.new(0, 135, 0, 42)
+    ContainerFolder.Size = UDim2.new(1, -140, 1, -64)
+    ContainerFolder.Position = UDim2.new(0, 140, 0, 42)
     ContainerFolder.BackgroundTransparency = 1
     ContainerFolder.Parent = MainFrame
 
     local WindowObj = { Tabs = {}, CurrentTab = nil }
 
-    -- Toast Notification System with Animated Countdown Progress Bar
+    -- Toast Notification System with Animated Countdown Bar
     function WindowObj:Notify(config)
         config = config or {}
         local title = config.Title or "Notification"
-        local content = config.Content or "Action executed successfully."
+        local content = config.Content = config.Content or "Action executed successfully."
         local duration = config.Duration or 4
 
         local NotifCard = Instance.new("Frame")
-        NotifCard.Size = UDim2.new(1, 0, 0, 64)
-        NotifCard.BackgroundColor3 = Color3.fromRGB(15, 15, 19)
+        NotifCard.Size = UDim2.new(1, 0, 0, 68)
+        NotifCard.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
         NotifCard.BackgroundTransparency = 0.2
-        NotifCard.Position = UDim2.new(1, 30, 0, 0)
+        NotifCard.Position = UDim2.new(1, 40, 0, 0)
         NotifCard.Parent = NotifHolder
 
         Instance.new("UICorner", NotifCard).CornerRadius = UDim.new(0, 8)
@@ -214,7 +266,7 @@ function Lumina:CreateWindow(config)
 
         local nTitle = Instance.new("TextLabel", NotifCard)
         nTitle.Size = UDim2.new(1, -20, 0, 20)
-        nTitle.Position = UDim2.new(0, 10, 0, 8)
+        nTitle.Position = UDim2.new(0, 12, 0, 8)
         nTitle.BackgroundTransparency = 1
         nTitle.Text = title
         nTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -224,18 +276,18 @@ function Lumina:CreateWindow(config)
 
         local nDesc = Instance.new("TextLabel", NotifCard)
         nDesc.Size = UDim2.new(1, -20, 0, 18)
-        nDesc.Position = UDim2.new(0, 10, 0, 28)
+        nDesc.Position = UDim2.new(0, 12, 0, 28)
         nDesc.BackgroundTransparency = 1
         nDesc.Text = content
-        nDesc.TextColor3 = Color3.fromRGB(180, 180, 190)
+        nDesc.TextColor3 = Color3.fromRGB(180, 180, 195)
         nDesc.TextSize = 11
         nDesc.Font = Enum.Font.Gotham
         nDesc.TextXAlignment = Enum.TextXAlignment.Left
 
         -- Countdown Progress Bar
         local BarTrack = Instance.new("Frame", NotifCard)
-        BarTrack.Size = UDim2.new(1, -20, 0, 3)
-        BarTrack.Position = UDim2.new(0, 10, 1, -8)
+        BarTrack.Size = UDim2.new(1, -24, 0, 3)
+        BarTrack.Position = UDim2.new(0, 12, 1, -8)
         BarTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
         Instance.new("UICorner", BarTrack).CornerRadius = UDim.new(1, 0)
 
@@ -244,18 +296,17 @@ function Lumina:CreateWindow(config)
         BarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
 
-        -- Slide In
-        Tween(NotifCard, {Position = UDim2.new(0, 0, 0, 0)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        -- Smooth Entrance Animation
+        Tween(NotifCard, {Position = UDim2.new(0, 0, 0, 0)}, 0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-        -- Shrink Bar over Duration
+        -- Countdown Tween
         local tweenBar = TweenService:Create(BarFill, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 1, 0)})
         tweenBar:Play()
 
         task.spawn(function()
             task.wait(duration)
-            -- Slide Out & Destroy
-            Tween(NotifCard, {Position = UDim2.new(1, 30, 0, 0), BackgroundTransparency = 1}, 0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-            task.wait(0.25)
+            Tween(NotifCard, {Position = UDim2.new(1, 40, 0, 0), BackgroundTransparency = 1}, 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+            task.wait(0.3)
             NotifCard:Destroy()
         end)
     end
@@ -264,10 +315,10 @@ function Lumina:CreateWindow(config)
         local TabButton = Instance.new("TextButton")
         TabButton.Name = tabName .. "_Tab"
         TabButton.Size = UDim2.new(1, 0, 0, 32)
-        TabButton.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+        TabButton.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
         TabButton.BackgroundTransparency = 1
         TabButton.Text = tabName
-        TabButton.TextColor3 = Color3.fromRGB(140, 140, 150)
+        TabButton.TextColor3 = Color3.fromRGB(140, 140, 155)
         TabButton.TextSize = 12
         TabButton.Font = Enum.Font.GothamMedium
         TabButton.Parent = Sidebar
@@ -307,7 +358,7 @@ function Lumina:CreateWindow(config)
 
         local function ActivateTab()
             for _, t in pairs(WindowObj.Tabs) do
-                Tween(t.Button, {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(140, 140, 150)}, 0.2)
+                Tween(t.Button, {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(140, 140, 155)}, 0.2)
                 t.Container.Visible = false
             end
             Tween(TabButton, {BackgroundTransparency = 0, TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
@@ -319,12 +370,12 @@ function Lumina:CreateWindow(config)
         if #WindowObj.Tabs == 0 then ActivateTab() end
         table.insert(WindowObj.Tabs, TabObj)
 
-        -- Component Generators
+        -- Component: Button
         function TabObj:CreateButton(name, callback)
             callback = callback or function() end
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(1, 0, 0, 34)
-            btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+            btn.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
             btn.BackgroundTransparency = 0.3
             btn.AutoButtonColor = false
             btn.Text = ""
@@ -339,20 +390,21 @@ function Lumina:CreateWindow(config)
             lbl.Size = UDim2.new(1, 0, 1, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.GothamSemibold
 
             btn.MouseButton1Click:Connect(callback)
         end
 
+        -- Component: Toggle
         function TabObj:CreateToggle(name, default, callback)
             local toggled = default or false
             callback = callback or function() end
 
             local frame = Instance.new("Frame", Container)
             frame.Size = UDim2.new(1, 0, 0, 34)
-            frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+            frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
             frame.BackgroundTransparency = 0.3
 
             Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
@@ -365,7 +417,7 @@ function Lumina:CreateWindow(config)
             lbl.Position = UDim2.new(0, 10, 0, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -373,13 +425,13 @@ function Lumina:CreateWindow(config)
             local track = Instance.new("Frame", frame)
             track.Size = UDim2.new(0, 34, 0, 18)
             track.Position = UDim2.new(1, -42, 0.5, -9)
-            track.BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(40, 40, 48)
+            track.BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(38, 38, 48)
             Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
             local knob = Instance.new("Frame", track)
             knob.Size = UDim2.new(0, 12, 0, 12)
             knob.Position = toggled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)
-            knob.BackgroundColor3 = toggled and Color3.fromRGB(15, 15, 18) or Color3.fromRGB(160, 160, 170)
+            knob.BackgroundColor3 = toggled and Color3.fromRGB(10, 10, 13) or Color3.fromRGB(160, 160, 175)
             Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
             local btn = Instance.new("TextButton", frame)
@@ -389,12 +441,14 @@ function Lumina:CreateWindow(config)
 
             btn.MouseButton1Click:Connect(function()
                 toggled = not toggled
-                Tween(track, {BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(40, 40, 48)})
+                Tween(track, {BackgroundColor3 = toggled and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(38, 38, 48)})
                 Tween(knob, {Position = toggled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)})
+                Tween(knob, {BackgroundColor3 = toggled and Color3.fromRGB(10, 10, 13) or Color3.fromRGB(160, 160, 175)})
                 callback(toggled)
             end)
         end
 
+        -- Component: Slider
         function TabObj:CreateSlider(name, min, max, default, callback)
             min = min or 0; max = max or 100
             default = math.clamp(default or min, min, max)
@@ -402,7 +456,7 @@ function Lumina:CreateWindow(config)
 
             local frame = Instance.new("Frame", Container)
             frame.Size = UDim2.new(1, 0, 0, 46)
-            frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+            frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
             frame.BackgroundTransparency = 0.3
 
             Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
@@ -415,7 +469,7 @@ function Lumina:CreateWindow(config)
             lbl.Position = UDim2.new(0, 10, 0, 4)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -425,7 +479,7 @@ function Lumina:CreateWindow(config)
             vlbl.Position = UDim2.new(1, -48, 0, 4)
             vlbl.BackgroundTransparency = 1
             vlbl.Text = tostring(default)
-            vlbl.TextColor3 = Color3.fromRGB(180, 180, 190)
+            vlbl.TextColor3 = Color3.fromRGB(180, 180, 195)
             vlbl.TextSize = 11
             vlbl.Font = Enum.Font.GothamMedium
             vlbl.TextXAlignment = Enum.TextXAlignment.Right
@@ -433,7 +487,7 @@ function Lumina:CreateWindow(config)
             local track = Instance.new("Frame", frame)
             track.Size = UDim2.new(1, -20, 0, 5)
             track.Position = UDim2.new(0, 10, 1, -12)
-            track.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+            track.BackgroundColor3 = Color3.fromRGB(38, 38, 48)
             Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
             local fill = Instance.new("Frame", track)
@@ -467,6 +521,7 @@ function Lumina:CreateWindow(config)
             end)
         end
 
+        -- Component: Dropdown
         function TabObj:CreateDropdown(name, options, callback)
             options = options or {}
             callback = callback or function() end
@@ -474,7 +529,7 @@ function Lumina:CreateWindow(config)
 
             local frame = Instance.new("Frame", Container)
             frame.Size = UDim2.new(1, 0, 0, 34)
-            frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+            frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
             frame.BackgroundTransparency = 0.3
             frame.ClipsDescendants = true
 
@@ -493,7 +548,7 @@ function Lumina:CreateWindow(config)
             lbl.Position = UDim2.new(0, 10, 0, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            lbl.TextColor3 = Color3.fromRGB(230, 230, 240)
             lbl.TextSize = 12
             lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -510,7 +565,7 @@ function Lumina:CreateWindow(config)
                 optBtn.Size = UDim2.new(1, 0, 0, 26)
                 optBtn.BackgroundTransparency = 1
                 optBtn.Text = opt
-                optBtn.TextColor3 = Color3.fromRGB(170, 170, 180)
+                optBtn.TextColor3 = Color3.fromRGB(170, 170, 185)
                 optBtn.TextSize = 11
                 optBtn.Font = Enum.Font.Gotham
 
@@ -528,119 +583,29 @@ function Lumina:CreateWindow(config)
             end)
         end
 
-        function TabObj:CreateColorPicker(name, default, callback)
-            default = default or Color3.fromRGB(255, 255, 255)
-            callback = callback or function() end
-            local expanded = false
-
-            local frame = Instance.new("Frame", Container)
-            frame.Size = UDim2.new(1, 0, 0, 34)
-            frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-            frame.BackgroundTransparency = 0.3
-            frame.ClipsDescendants = true
-
-            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
-            local stroke = Instance.new("UIStroke", frame)
-            stroke.Color = Color3.fromRGB(255, 255, 255)
-            stroke.Transparency = 0.9
-
-            local btn = Instance.new("TextButton", frame)
-            btn.Size = UDim2.new(1, 0, 0, 34)
-            btn.BackgroundTransparency = 1
-            btn.Text = ""
-
-            local lbl = Instance.new("TextLabel", btn)
-            lbl.Size = UDim2.new(1, -50, 0, 34)
-            lbl.Position = UDim2.new(0, 10, 0, 0)
-            lbl.BackgroundTransparency = 1
-            lbl.Text = name
-            lbl.TextColor3 = Color3.fromRGB(230, 230, 230)
-            lbl.TextSize = 12
-            lbl.Font = Enum.Font.Gotham
-            lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-            local preview = Instance.new("Frame", btn)
-            preview.Size = UDim2.new(0, 20, 0, 20)
-            preview.Position = UDim2.new(1, -28, 0.5, -10)
-            preview.BackgroundColor3 = default
-            Instance.new("UICorner", preview).CornerRadius = UDim.new(0, 4)
-
-            local hueSlider = Instance.new("Frame", frame)
-            hueSlider.Size = UDim2.new(1, -20, 0, 14)
-            hueSlider.Position = UDim2.new(0, 10, 0, 42)
-            hueSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Instance.new("UICorner", hueSlider).CornerRadius = UDim.new(0, 4)
-
-            local grad = Instance.new("UIGradient", hueSlider)
-            grad.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
-                ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
-                ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
-                ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
-                ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
-                ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
-                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
-            })
-
-            local picking = false
-            local function updateColor(input)
-                local pos = math.clamp((input.Position.X - hueSlider.AbsolutePosition.X) / hueSlider.AbsoluteSize.X, 0, 1)
-                local col = Color3.fromHSV(pos, 1, 1)
-                preview.BackgroundColor3 = col
-                callback(col)
-            end
-
-            hueSlider.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    picking = true; updateColor(input)
-                end
-            end)
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    picking = false
-                end
-            end)
-            UserInputService.InputChanged:Connect(function(input)
-                if picking and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    updateColor(input)
-                end
-            end)
-
-            btn.MouseButton1Click:Connect(function()
-                expanded = not expanded
-                Tween(frame, {Size = UDim2.new(1, 0, 0, expanded and 68 or 34)})
-            end)
-        end
-
         return TabObj
     end
 
-    -- Built-in Demo Method with Toast Notifications
+    -- Built-in Demo Method
     function WindowObj:Demo()
-        local t1 = self:CreateTab("Demo Controls")
+        local t1 = self:CreateTab("Features & Demo")
         
-        t1:CreateButton("Test Notification", function()
+        t1:CreateButton("Trigger Alert", function()
             self:Notify({
-                Title = "Success!",
-                Content = "This is a WindUI / Rayfield styled alert.",
+                Title = "Fluent & WindUI Style",
+                Content = "Smooth countdown timer bar notification!",
                 Duration = 4
             })
         end)
 
-        t1:CreateToggle("Enable GodMode", true, function(state) 
-            self:Notify({ Title = "Toggle Changed", Content = "GodMode is now " .. tostring(state), Duration = 3 })
+        t1:CreateToggle("God Mode", true, function(state) 
+            self:Notify({ Title = "State Updated", Content = "GodMode is " .. tostring(state), Duration = 3 })
         end)
 
-        t1:CreateSlider("WalkSpeed", 16, 120, 16, function(val) 
-            -- print("Speed:", val) 
-        end)
+        t1:CreateSlider("WalkSpeed", 16, 120, 16, function(val) end)
 
-        t1:CreateDropdown("Theme Mode", {"Dark", "AMOLED", "Midnight"}, function(opt) 
-            self:Notify({ Title = "Theme Selected", Content = "Preset set to " .. opt, Duration = 3 })
-        end)
-
-        t1:CreateColorPicker("Accent Color", Color3.fromRGB(255, 255, 255), function(col) 
-            -- print("Color:", col)
+        t1:CreateDropdown("Preset Mode", {"Performance", "Quality", "Ultra"}, function(opt) 
+            self:Notify({ Title = "Preset Loaded", Content = opt .. " configuration applied.", Duration = 3 })
         end)
     end
 
